@@ -1,0 +1,62 @@
+[
+  {
+    "Amount": 90000,
+    "Category": "inc",
+    "Description": "main wallet",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -4000,
+    "Category": "fnb",
+    "Description": "ayam cp",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -35000,
+    "Category": "pinjaman",
+    "Description": "joan pinjam",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -11000,
+    "Category": "exp",
+    "Description": "laundry",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -5000,
+    "Category": "fnb",
+    "Description": "nescafe 2",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -6000,
+    "Category": "fnb",
+    "Description": "nasi telur abong",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -4000,
+    "Category": "fnb",
+    "Description": "pastel 2",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": -3500,
+    "Category": "fnb",
+    "Description": "roti wijen",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": 2000,
+    "Category": "fnb",
+    "Description": "pulsa",
+    "Date": "2026-04-03"
+  },
+  {
+    "Amount": 2000,
+    "Category": "test",
+    "Description": "test",
+    "Date": "2026-04-03"
+  }
+]
