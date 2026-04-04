@@ -12,7 +12,14 @@ import (
 	"strings"
 	"time"
 )
+const defaultDataFile = "budget.json"
 
+func getDataFile() string {
+	if path := os.Getenv("BTRACK_DATA"); path != "" {
+		return path
+	}
+	return defaultDataFile
+}
 // Transaction mirrors a real-world budget entry.
 type Transaction struct {
 	Amount      float64 `json:"Amount"`
@@ -38,7 +45,7 @@ func main() {
 	case "add":
 		addTransaction()
 	case "list":
-		printSummary("budget.json")
+		printSummary(getDataFile())
 	case "delete":
 		deleteTransaction()
 	case "edit":
@@ -135,17 +142,17 @@ func addTransaction() {
 		log.Fatal("Category required")
 	}
 
-	txs, err := loadTransactions("budget.json")
+	txs, err := loadTransactions(getDataFile())
 	if err != nil {
 		log.Fatal(err)
 	}
-	migrateCSVtoJSON("budget.csv", "budget.json") // Migrate if exists
+	migrateCSVtoJSON("budget.csv", getDataFile()) // Migrate if exists
 
 	txs = append(txs, t)
-	if err := saveTransactions("budget.json", txs); err != nil {
+	if err := saveTransactions(getDataFile(), txs); err != nil {
 		log.Fatal(err)
 	}
-	printSummary("budget.json")
+	printSummary(getDataFile())
 }
 
 func interactiveAdd() {
@@ -168,7 +175,7 @@ func interactiveAdd() {
 		}
 	}
 
-	budgetFile := "budget.json"
+	budgetFile := getDataFile()
 	existing, err := loadTransactions(budgetFile)
 	if err != nil {
 		log.Fatal(err)
@@ -269,11 +276,11 @@ func printSummary(filename string) {
 }
 
 func deleteTransaction() {
-	txs, err := loadTransactions("budget.json")
+	txs, err := loadTransactions(getDataFile())
 	if err != nil {
 		log.Fatal(err)
 	}
-	migrateCSVtoJSON("budget.csv", "budget.json")
+	migrateCSVtoJSON("budget.csv", getDataFile())
 
 	if len(txs) == 0 {
 		fmt.Println("No transactions.")
@@ -292,18 +299,18 @@ func deleteTransaction() {
 		log.Fatal("Invalid index")
 	}
 	txs = append(txs[:idx-1], txs[idx:]...)
-	if err := saveTransactions("budget.json", txs); err != nil {
+	if err := saveTransactions(getDataFile(), txs); err != nil {
 		log.Fatal(err)
 	}
-	printSummary("budget.json")
+	printSummary(getDataFile())
 }
 
 func editTransaction() {
-	txs, err := loadTransactions("budget.json")
+	txs, err := loadTransactions(getDataFile())
 	if err != nil {
 		log.Fatal(err)
 	}
-	migrateCSVtoJSON("budget.csv", "budget.json")
+	migrateCSVtoJSON("budget.csv", getDataFile())
 
 	if len(txs) == 0 {
 		fmt.Println("No transactions.")
@@ -331,8 +338,8 @@ func editTransaction() {
 		return
 	}
 
-	if err := saveTransactions("budget.json", txs); err != nil {
+	if err := saveTransactions(getDataFile(), txs); err != nil {
 		log.Fatal(err)
 	}
-	printSummary("budget.json")
+	printSummary(getDataFile())
 }
