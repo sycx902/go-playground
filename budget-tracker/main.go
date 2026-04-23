@@ -57,6 +57,48 @@ func main() {
 	}
 }
 
+type Config struct {
+    DataFile string `json:"data_file"`
+    Currency string `json:"currency"`
+}
+
+func printCategorySummary(txs []Transaction) {
+    catTotals := make(map[string]float64)
+    for _, t := range txs {
+        catTotals[t.Category] += t.Amount
+    }
+    fmt.Println("\nBy Category:")
+    for cat, total := range catTotals {
+        fmt.Printf("  %s: %.2f\n", cat, total)
+    }
+}
+
+func loadOrMigrate(filename string) ([]Transaction, error) {
+    txs, err := loadTransactions(filename)
+    if err != nil {
+        return nil, err
+    }
+    if err := migrateCSVtoJSON("budget.csv", filename); err != nil {
+        return nil, err
+    }
+    return txs, nil
+}
+
+//validateTransaction
+func validateTransaction(t Transaction) error {
+    if t.Category == "" {
+        return fmt.Errorf("category required")
+    }
+    if t.Amount == 0 {
+        return fmt.Errorf("amount required")
+    }
+    // Add date validation
+    if _, err := time.Parse("2006-01-02", t.Date); t.Date != "" && err != nil {
+        return fmt.Errorf("invalid date format: %v", err)
+    }
+    return nil
+}
+
 func loadTransactions(filename string) ([]Transaction, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -155,6 +197,8 @@ func addTransaction() {
 	printSummary(getDataFile())
 }
 
+
+
 func interactiveAdd() {
 	reader := bufio.NewReader(os.Stdin)
 	txs := make([]Transaction, 0)
@@ -188,10 +232,11 @@ func interactiveAdd() {
 	}
 	printSummary(budgetFile)
 }
-
+// interactive prompt
 func promptInteractive(reader *bufio.Reader) Transaction {
 	t := Transaction{Date: time.Now().Format("2006-01-02")}
 
+	// Amount
 	fmt.Print("Amount (±): ")
 	amtStr, err := reader.ReadString('\n')
 	if err != nil {
@@ -199,13 +244,62 @@ func promptInteractive(reader *bufio.Reader) Transaction {
 	}
 	t.Amount, _ = strconv.ParseFloat(strings.TrimSpace(amtStr), 64)
 
-	fmt.Print("Category: ")
-	cat, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
-	t.Category = strings.TrimSpace(cat)
+	// Load all transactions and collect unique categories
+	txs, _ := loadTransactions(getDataFile())
+	seen := map[string]bool{}
+	var categories []string
 
+	for _, tx := range txs {
+		if tx.Category != "" && !seen[tx.Category] {
+			seen[tx.Category] = true
+			categories = append(categories, tx.Category)
+		}
+	}
+
+	// Show category menu
+	fmt.Println("Categories:")
+	for i, cat := range categories {
+		fmt.Printf("  %d. %s\n", i+1, cat)
+	}
+	fmt.Println("  0. New")
+
+	// Read category by number or new
+	for {
+		fmt.Print("Category (number or 0 for new): ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error reading input; try again.")
+			continue
+		}
+		input = strings.TrimSpace(input)
+
+		if idx, err := strconv.Atoi(input); err == nil {
+			if idx == 0 {
+				// New category
+				for {
+					fmt.Print("New category: ")
+					newCat, err := reader.ReadString('\n')
+					if err != nil {
+						fmt.Fprintln(os.Stderr, "Error reading input; try again.")
+						continue
+					}
+					newCat = strings.TrimSpace(newCat)
+					if newCat != "" {
+						t.Category = newCat
+						break
+					}
+					fmt.Println("Category cannot be empty.")
+				}
+				break
+			} else if idx >= 1 && idx <= len(categories) {
+				t.Category = categories[idx-1]
+				break
+			}
+		}
+		fmt.Println("Invalid choice; try again.")
+	}
+
+	// Description
 	fmt.Print("Description: ")
 	desc, err := reader.ReadString('\n')
 	if err != nil {
@@ -213,6 +307,7 @@ func promptInteractive(reader *bufio.Reader) Transaction {
 	}
 	t.Description = strings.TrimSpace(desc)
 
+	// Date
 	fmt.Print("Date (YYYY-MM-DD, Enter=today): ")
 	dateStr, err := reader.ReadString('\n')
 	if err != nil {
@@ -222,8 +317,11 @@ func promptInteractive(reader *bufio.Reader) Transaction {
 	if dateTrim != "" {
 		t.Date = dateTrim
 	}
+
 	return t
 }
+
+
 
 func promptTransaction(am float64, cat, desc, dat string) Transaction {
 	t := Transaction{
